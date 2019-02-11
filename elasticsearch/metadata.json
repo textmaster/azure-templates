@@ -1,0 +1,7 @@
+{
+  "itemDisplayName": "Install Elasticsearch cluster on Virtual Machines",
+  "description": "This template deploys an Elasticsearch cluster on Virtual Machines using linked templates.",
+  "summary": "Provision an Elasticsearch cluster on Virtual Machines",
+  "githubUsername": "textmaster",
+  "dateUpdated": "2019-02-11"
+}

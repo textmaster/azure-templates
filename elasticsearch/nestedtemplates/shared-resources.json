@@ -1,0 +1,128 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "35.0.2",
+  "parameters": {
+    "networkSettings": {
+      "type": "object",
+      "metadata": {
+        "description": "Network settings object"
+      }
+    },
+    "ilbIpAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "The static IP address to use with the internal load balancer configuration"
+      }
+    },
+    "namespace": {
+      "type": "string",
+      "defaultValue": "es-cluster",
+      "metadata": {
+        "description": "Namespace for resources created by this template"
+      }
+    }
+  },
+  "variables": {
+    "loadBalancerName": "[concat(parameters('namespace'), '-load-balancer')]",
+    "feLoadBalancerConfig": [
+      {
+        "Name": "LBFE",
+        "Properties": {
+          "subnet": {
+            "Id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('networkSettings').virtualNetworkName), '/subnets/', parameters('networkSettings').subnet.name)]"
+          },
+          "privateIPAddress": "[parameters('ilbIpAddress')]",
+          "privateIPAllocationMethod": "Static"
+        }
+      }
+    ]
+  },
+  "resources": [
+    {
+      "apiVersion": "2016-03-30",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[parameters('networkSettings').virtualNetworkName]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('networkSettings').addressPrefix]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('networkSettings').subnet.name]",
+            "properties": {
+              "addressPrefix": "[parameters('networkSettings').subnet.prefix]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2016-03-30",
+      "name": "[variables('loadBalancerName')]",
+      "type": "Microsoft.Network/loadBalancers",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('networkSettings').virtualNetworkName)]"
+      ],
+      "properties": {
+        "frontendIPConfigurations": "[variables('feLoadBalancerConfig')]",
+        "backendAddressPools": [
+          {
+            "name": "LBBE"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "es-http-rule",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/frontendIPConfigurations/LBFE')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/backendAddressPools/LBBE')]"
+              },
+              "protocol": "Tcp",
+              "frontendPort": 9200,
+              "backendPort": 9200,
+              "enableFloatingIP": false,
+              "idleTimeoutInMinutes": 5,
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/probes/es-tcp-probe')]"
+              }
+            }
+          },
+          {
+            "name": "es-tcp-rule",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/frontendIPConfigurations/LBFE')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/backendAddressPools/LBBE')]"
+              },
+              "protocol": "Tcp",
+              "frontendPort": 9300,
+              "backendPort": 9300,
+              "enableFloatingIP": false,
+              "idleTimeoutInMinutes": 5
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "es-tcp-probe",
+            "properties": {
+              "protocol": "Tcp",
+              "port": 9200,
+              "intervalInSeconds": 30,
+              "numberOfProbes": 3
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

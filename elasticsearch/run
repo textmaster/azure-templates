@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+
+require 'json'
+
+region = "West Europe"
+local_template      = ARGV[0]
+environment         = ARGV[1].to_s[0..3]
+resource_group_name = ARGV[2] || "#{local_template}-#{environment}"
+
+if local_template.nil?
+  puts "No local template name provided"
+  exit
+end
+
+unless %(staging production).include?(environment)
+  puts "Invalid environment provided"
+  exit
+end
+
+puts "Creating #{resource_group_name} resource group in #{region}"
+system("az group create --name '#{resource_group_name}' --location '#{region}'")
+
+data = JSON.parse(File.read("local.#{local_template}.#{environment}.parameters.json"))
+parameters = data["parameters"]
+parameters["esClusterName"]["value"] = resource_group_name
+
+puts "Deploying elasticsearch cluster in #{resource_group_name} resource group"
+system("az group deployment create --template-file azuredeploy.json --parameters '#{parameters.to_json}' --resource-group '#{resource_group_name}'")
+data = `az network public-ip list --resource-group '#{resource_group_name}' --output json`.strip
+puts "Public IP:"
+puts JSON.parse(data).map { |i| i["ipAddress"] }.join(", ")

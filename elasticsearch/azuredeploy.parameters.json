@@ -1,0 +1,45 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "35.0.2",
+  "parameters": {
+    "adminUsername": {
+      "value": "CHANGEME"
+    },
+    "adminPassword": {
+      "value": "CHANGEME"
+    },
+    "sshPublicKeys": {
+      "value": ["CHANGEME", "CHANGEME"]
+    },
+    "authenticationType": {
+      "value": "sshPublicKey"
+    },
+    "esVersion": {
+      "value": "6.2.1"
+    },
+    "haproxyPublicPort": {
+      "value": "9200"
+    },
+    "haproxyUser": {
+      "value": "CHANGEME"
+    },
+    "haproxyBackendPassword": {
+      "value": "CHANGEME"
+    },
+    "haproxyStatsPassword": {
+      "value": "CHANGEME"
+    },
+    "haproxySslCert": {
+      "value": "CHANGEME"
+    },
+    "logglyToken": {
+      "value": "CHANGEME"
+    },
+    "sshLocalPublicKey": {
+      "value": "CHANGEME"
+    },
+    "sshLocalPrivateKey": {
+      "value": "CHANGEME"
+    }
+  }
+}
